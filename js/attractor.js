@@ -125,8 +125,8 @@ function runAttractor(ctx, w, h, params, seed, opts) {
     points[i] = { x: sx, y: sy };
   }
 
-  const { r, g, b: bch } = hexToRgb(params.color);
-  ctx.fillStyle = `rgba(${r},${g},${bch},${params.opacity})`;
+  const rampSteps = 32;
+  const ramp = buildColorRamp(params.colorStart, params.colorEnd, params.opacity, rampSteps);
   const dot = Math.max(0.5, params.pointSize * (w / BASE_W));
 
   function stepOnce() {
@@ -136,6 +136,7 @@ function runAttractor(ctx, w, h, params, seed, opts) {
       pt.x = nx; pt.y = ny;
       const cx = nx * scale + offX;
       const cy = ny * scale + offY;
+      ctx.fillStyle = ramp[rampIndex((nx - minX) / spanX, rampSteps)];
       ctx.fillRect(cx - dot / 2, cy - dot / 2, dot, dot);
     }
   }

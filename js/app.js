@@ -20,7 +20,8 @@ const els = {
   attractorSpeed: document.getElementById('attractorSpeed'),
   pointSize: document.getElementById('pointSize'),
   pointOpacity: document.getElementById('pointOpacity'),
-  accentColor: document.getElementById('accentColor'),
+  colorStart: document.getElementById('colorStart'),
+  colorEnd: document.getElementById('colorEnd'),
   favoriteLabel: document.getElementById('favoriteLabel'),
   saveFavoriteBtn: document.getElementById('saveFavoriteBtn'),
   favoritesList: document.getElementById('favoritesList'),
@@ -48,10 +49,12 @@ function currentMode() {
 }
 
 function readParams() {
-  const color = els.accentColor.value;
+  const colorStart = els.colorStart.value;
+  const colorEnd = els.colorEnd.value;
   if (currentMode() === 'attractor') {
     return {
-      color,
+      colorStart,
+      colorEnd,
       attractorType: els.attractorType.value,
       density: +els.attractorTrails.value,
       speed: +els.attractorSpeed.value,
@@ -60,7 +63,8 @@ function readParams() {
     };
   }
   return {
-    color,
+    colorStart,
+    colorEnd,
     density: +els.density.value,
     fieldScale: +els.fieldScale.value,
     curl: +els.curl.value,
@@ -72,7 +76,9 @@ function readParams() {
 }
 
 function writeParams(mode, params) {
-  els.accentColor.value = params.color;
+  // Favorites saved before the two-color gradient shipped only have `color`.
+  els.colorStart.value = params.colorStart || params.color;
+  els.colorEnd.value = params.colorEnd || params.color;
   if (mode === 'attractor') {
     els.attractorType.value = params.attractorType;
     els.attractorTrails.value = params.density;
@@ -283,7 +289,8 @@ function exportPNG() {
   els[id].addEventListener('change', () => regenerate());
 });
 els.attractorType.addEventListener('change', () => regenerate());
-els.accentColor.addEventListener('input', () => regenerate());
+els.colorStart.addEventListener('input', () => regenerate());
+els.colorEnd.addEventListener('input', () => regenerate());
 els.seedInput.addEventListener('change', () => {
   const v = parseInt(els.seedInput.value, 10);
   if (!Number.isNaN(v)) regenerate(v);

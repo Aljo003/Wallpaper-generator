@@ -1,5 +1,32 @@
 // Seeded PRNG (mulberry32) + 2D value noise, seeded off the same RNG
 // so a given seed always reproduces the exact same field and particle spawns.
+// Also hosts the shared color-ramp helpers used by both generative modes.
+
+function hexToRgb(hex) {
+  const v = parseInt(hex.slice(1), 16);
+  return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
+}
+
+// Precomputes a fixed number of interpolated rgba() strings between two hex
+// colors so per-particle/per-point coloring only needs a cheap array lookup
+// instead of building a new color string every draw call.
+function buildColorRamp(hexStart, hexEnd, opacity, steps) {
+  const start = hexToRgb(hexStart);
+  const end = hexToRgb(hexEnd);
+  const ramp = new Array(steps);
+  for (let i = 0; i < steps; i++) {
+    const t = steps === 1 ? 0 : i / (steps - 1);
+    const r = Math.round(start.r + (end.r - start.r) * t);
+    const g = Math.round(start.g + (end.g - start.g) * t);
+    const b = Math.round(start.b + (end.b - start.b) * t);
+    ramp[i] = `rgba(${r},${g},${b},${opacity})`;
+  }
+  return ramp;
+}
+
+function rampIndex(t, steps) {
+  return Math.max(0, Math.min(steps - 1, Math.floor(t * steps)));
+}
 
 function mulberry32(seed) {
   return function() {

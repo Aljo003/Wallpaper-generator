@@ -46,5 +46,5 @@ npx serve .
 - [x] Shranjevanje/nalaganje priljubljenih seedov + parametrov (localStorage)
 - [ ] Batch export — več variacij naenkrat v en klik
 - [ ] WebGL renderer za večjo gostoto delcev pri boljši performansi
-- [ ] Dvo-barvni gradient namesto ene accent barve
+- [x] Dvo-barvni gradient namesto ene accent barve
 - [x] Portrait/phone resolucije

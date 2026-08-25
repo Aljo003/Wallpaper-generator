@@ -5,11 +5,6 @@
 
 const BASE_W = 960, BASE_H = 540;
 
-function hexToRgb(hex) {
-  const v = parseInt(hex.slice(1), 16);
-  return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
-}
-
 function runFlowField(ctx, w, h, params, seed, opts) {
   opts = opts || {};
   const noise2D = buildNoise(seed);
@@ -26,8 +21,8 @@ function runFlowField(ctx, w, h, params, seed, opts) {
     };
   }
 
-  const { r, g, b } = hexToRgb(params.color);
-  ctx.strokeStyle = `rgba(${r},${g},${b},${params.opacity})`;
+  const rampSteps = 32;
+  const ramp = buildColorRamp(params.colorStart, params.colorEnd, params.opacity, rampSteps);
   ctx.lineWidth = params.lineWidth * linScale;
   ctx.lineCap = 'round';
 
@@ -42,6 +37,7 @@ function runFlowField(ctx, w, h, params, seed, opts) {
       const nxp = pt.x + Math.cos(angle) * stepLen;
       const nyp = pt.y + Math.sin(angle) * stepLen;
 
+      ctx.strokeStyle = ramp[rampIndex(pt.life / params.life, rampSteps)];
       ctx.beginPath();
       ctx.moveTo(pt.x, pt.y);
       ctx.lineTo(nxp, nyp);
