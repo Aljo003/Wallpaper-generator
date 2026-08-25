@@ -13,6 +13,7 @@ js/noise.js          seedani PRNG (mulberry32) + 2D value noise + barvni ramp he
 js/flowfield.js       simulacija delcev flow-field moda (preview IN export)
 js/attractor.js       simulacija strange-attractor moda (preview IN export)
 js/bloom.js           simulacija bloom/gradient-blob moda (preview IN export)
+js/cellular.js         simulacija cellular automata moda (preview IN export)
 js/app.js             UI wiring, mode switching, priljubljeni, state, PNG/batch export
 wrangler.toml         Cloudflare Workers static-asset deploy config
 ```
@@ -27,15 +28,19 @@ npx serve .
 
 ## Trenutne funkcionalnosti
 
-- Trije generativni modi, izberljivi preko dropdown-a ("Generativni mode"):
+- Štirje generativni modi, izberljivi preko dropdown-a ("Generativni mode"):
   - **Flow field** — Perlin/value noise polje + delci
   - **Attractor** — kaotični 2D atraktorji (Clifford, De Jong, Svensson)
   - **Bloom** — mehki gradient blobs, ki počasi lezejo po noise polju
+  - **Cellular automata** — elementarni 1D Wolfram CA (Rule 30/90/110/...),
+    zložen vrstica-za-vrstico v 2D teksturo
 - Flow field parametri: gostota, merilo polja, curl, hitrost, dolžina sledi,
   debelina črte, prosojnost
 - Attractor parametri: vrsta atraktorja, gostota sledi, hitrost, velikost
   pike, prosojnost pike
 - Bloom parametri: število blobov, velikost blobov, hitrost, prosojnost
+- Cellular automata parametri: pravilo, velikost celice, začetna gostota,
+  prosojnost
 - Dvo-barvni gradient (začetna/končna barva), skupen vsem modom
 - Seed sistem — isti seed + parametri (+ mode) = ponovljiv rezultat
 - Priljubljeni — shrani trenutni mode/seed/parametre pod imenom v
@@ -56,7 +61,7 @@ brez dodatnega build koraka.
 ## Roadmap / ideje za nadaljevanje
 
 - [x] Dodatni generativni mode: particle bloom/gradient blobs
-- [ ] Dodatni generativni mode: cellular automata
+- [x] Dodatni generativni mode: cellular automata
 - [x] Shranjevanje/nalaganje priljubljenih seedov + parametrov (localStorage)
 - [x] Batch export — več variacij naenkrat v en klik
 - [ ] WebGL renderer za večjo gostoto delcev pri boljši performansi

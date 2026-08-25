@@ -9,6 +9,7 @@ const els = {
   flowfieldFields: document.getElementById('flowfieldFields'),
   attractorFields: document.getElementById('attractorFields'),
   bloomFields: document.getElementById('bloomFields'),
+  cellularFields: document.getElementById('cellularFields'),
   density: document.getElementById('density'),
   fieldScale: document.getElementById('fieldScale'),
   curl: document.getElementById('curl'),
@@ -25,6 +26,10 @@ const els = {
   blobSize: document.getElementById('blobSize'),
   bloomSpeed: document.getElementById('bloomSpeed'),
   bloomOpacity: document.getElementById('bloomOpacity'),
+  caRule: document.getElementById('caRule'),
+  caCellSize: document.getElementById('caCellSize'),
+  caDensity: document.getElementById('caDensity'),
+  caOpacity: document.getElementById('caOpacity'),
   colorStart: document.getElementById('colorStart'),
   colorEnd: document.getElementById('colorEnd'),
   favoriteLabel: document.getElementById('favoriteLabel'),
@@ -54,6 +59,9 @@ const els = {
   blobSizeVal: document.getElementById('blobSizeVal'),
   bloomSpeedVal: document.getElementById('bloomSpeedVal'),
   bloomOpacityVal: document.getElementById('bloomOpacityVal'),
+  caCellSizeVal: document.getElementById('caCellSizeVal'),
+  caDensityVal: document.getElementById('caDensityVal'),
+  caOpacityVal: document.getElementById('caOpacityVal'),
 };
 
 function currentMode() {
@@ -85,6 +93,16 @@ function readParams() {
       opacity: +els.bloomOpacity.value,
     };
   }
+  if (mode === 'cellular') {
+    return {
+      colorStart,
+      colorEnd,
+      rule: +els.caRule.value,
+      cellSize: +els.caCellSize.value,
+      seedDensity: +els.caDensity.value,
+      opacity: +els.caOpacity.value,
+    };
+  }
   return {
     colorStart,
     colorEnd,
@@ -113,6 +131,11 @@ function writeParams(mode, params) {
     els.blobSize.value = params.blobSize;
     els.bloomSpeed.value = params.speed;
     els.bloomOpacity.value = params.opacity;
+  } else if (mode === 'cellular') {
+    els.caRule.value = params.rule;
+    els.caCellSize.value = params.cellSize;
+    els.caDensity.value = params.seedDensity;
+    els.caOpacity.value = params.opacity;
   } else {
     els.density.value = params.density;
     els.fieldScale.value = params.fieldScale;
@@ -176,7 +199,12 @@ function renderFavorites() {
   });
 }
 
-const MODE_LABELS = { flowfield: 'Flow field', attractor: 'Attractor', bloom: 'Bloom' };
+const MODE_LABELS = {
+  flowfield: 'Flow field',
+  attractor: 'Attractor',
+  bloom: 'Bloom',
+  cellular: 'Cellular automata',
+};
 
 function addFavorite() {
   const label = els.favoriteLabel.value.trim() ||
@@ -211,6 +239,7 @@ function applyModeVisibility() {
   els.flowfieldFields.classList.toggle('hidden', mode !== 'flowfield');
   els.attractorFields.classList.toggle('hidden', mode !== 'attractor');
   els.bloomFields.classList.toggle('hidden', mode !== 'bloom');
+  els.cellularFields.classList.toggle('hidden', mode !== 'cellular');
 }
 
 function updateReadouts() {
@@ -228,6 +257,10 @@ function updateReadouts() {
     els.blobSizeVal.textContent = p.blobSize;
     els.bloomSpeedVal.textContent = p.speed.toFixed(1);
     els.bloomOpacityVal.textContent = p.opacity.toFixed(3);
+  } else if (mode === 'cellular') {
+    els.caCellSizeVal.textContent = p.cellSize;
+    els.caDensityVal.textContent = p.seedDensity.toFixed(2);
+    els.caOpacityVal.textContent = p.opacity.toFixed(2);
   } else {
     els.densityVal.textContent = p.density;
     els.scaleVal.textContent = p.fieldScale.toFixed(1);
@@ -256,6 +289,10 @@ function startPreview() {
   } else if (mode === 'bloom') {
     stepOnce = runBloom(ctx, canvas.width, canvas.height, params, currentSeed);
     totalFrames = 200;
+    subStepsPerFrame = 1;
+  } else if (mode === 'cellular') {
+    stepOnce = runCellular(ctx, canvas.width, canvas.height, params, currentSeed);
+    totalFrames = 250;
     subStepsPerFrame = 1;
   } else {
     stepOnce = runFlowField(ctx, canvas.width, canvas.height, params, currentSeed);
@@ -300,6 +337,9 @@ function renderFullResBlob(seed, mode, params, w, h) {
     } else if (mode === 'bloom') {
       stepOnce = runBloom(ctx, w, h, params, seed);
       totalSteps = 200;
+    } else if (mode === 'cellular') {
+      stepOnce = runCellular(ctx, w, h, params, seed);
+      totalSteps = 2000;
     } else {
       const overrideCount = Math.min(7000, Math.round(params.density * Math.sqrt(areaScale)));
       stepOnce = runFlowField(ctx, w, h, params, seed, { overrideCount });
@@ -375,6 +415,11 @@ async function batchExport() {
   els[id].addEventListener('input', updateReadouts);
   els[id].addEventListener('change', () => regenerate());
 });
+['caCellSize', 'caDensity', 'caOpacity'].forEach((id) => {
+  els[id].addEventListener('input', updateReadouts);
+  els[id].addEventListener('change', () => regenerate());
+});
+els.caRule.addEventListener('change', () => regenerate());
 els.attractorType.addEventListener('change', () => regenerate());
 els.colorStart.addEventListener('input', () => regenerate());
 els.colorEnd.addEventListener('input', () => regenerate());
