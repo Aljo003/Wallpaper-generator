@@ -1,7 +1,9 @@
 # Flowfield — OLED Wallpaper Generator
 
 Browser-based generativna art orodje za ustvarjanje OLED desktop/phone
-wallpaperjev. Tri generativne moda risejo na true-black (`#000000`) ozadje.
+wallpaperjev. Štiri generativni modi rišejo na true-black (`#000000`) ozadje,
+renderirano preko WebGL (en sam "quad batch" draw call na frame namesto
+tisočih canvas 2D klicev — večja gostota delcev pri boljši performansi).
 Brez build koraka — odpri `index.html` v brskalniku.
 
 ## Struktura
@@ -10,6 +12,7 @@ Brez build koraka — odpri `index.html` v brskalniku.
 index.html          vstopna točka, layout (canvas + kontrolna plošča)
 css/style.css        temni "industrijski panel" videz
 js/noise.js          seedani PRNG (mulberry32) + 2D value noise + barvni ramp helperji
+js/webgl.js           skupni WebGL quad-batch renderer (shader, buffer, draw calls)
 js/flowfield.js       simulacija delcev flow-field moda (preview IN export)
 js/attractor.js       simulacija strange-attractor moda (preview IN export)
 js/bloom.js           simulacija bloom/gradient-blob moda (preview IN export)
@@ -64,6 +67,6 @@ brez dodatnega build koraka.
 - [x] Dodatni generativni mode: cellular automata
 - [x] Shranjevanje/nalaganje priljubljenih seedov + parametrov (localStorage)
 - [x] Batch export — več variacij naenkrat v en klik
-- [ ] WebGL renderer za večjo gostoto delcev pri boljši performansi
+- [x] WebGL renderer za večjo gostoto delcev pri boljši performansi
 - [x] Dvo-barvni gradient namesto ene accent barve
 - [x] Portrait/phone resolucije

@@ -2,7 +2,8 @@
 // Svensson) and plots every visited point. Attractor coordinates come out in the map's
 // own natural range, so runAttractor() first samples the trajectory to find its bounding
 // box, then scales/centers it to fill the canvas — the attractor equivalent of flowfield.js
-// normalizing particle coordinates to canvas size.
+// normalizing particle coordinates to canvas size. Rendered as WebGL quads (hard-edged
+// squares, matching the old canvas fillRect dots) via the shared renderer in webgl.js.
 
 const ATTRACTOR_FORMULAS = {
   clifford: {
@@ -85,7 +86,7 @@ function pickAttractorParams(rand, formula) {
   return { a, b, c, d, bounds: null };
 }
 
-function runAttractor(ctx, w, h, params, seed, opts) {
+function runAttractor(renderer, w, h, params, seed, opts) {
   opts = opts || {};
   const rand = mulberry32(seed);
   const formula = ATTRACTOR_FORMULAS[params.attractorType] || ATTRACTOR_FORMULAS.clifford;
@@ -126,19 +127,22 @@ function runAttractor(ctx, w, h, params, seed, opts) {
   }
 
   const rampSteps = 32;
-  const ramp = buildColorRamp(params.colorStart, params.colorEnd, params.opacity, rampSteps);
+  const ramp = buildRgbRamp(params.colorStart, params.colorEnd, rampSteps);
   const dot = Math.max(0.5, params.pointSize * (w / BASE_W));
+  const batch = createQuadBatch(points.length);
 
   function stepOnce() {
+    batch.reset();
     for (let i = 0; i < points.length; i++) {
       const pt = points[i];
       const [nx, ny] = formula.step(pt.x, pt.y, a, b, c, d);
       pt.x = nx; pt.y = ny;
       const cx = nx * scale + offX;
       const cy = ny * scale + offY;
-      ctx.fillStyle = ramp[rampIndex((nx - minX) / spanX, rampSteps)];
-      ctx.fillRect(cx - dot / 2, cy - dot / 2, dot, dot);
+      const { r, g, b: bl } = ramp[rampIndex((nx - minX) / spanX, rampSteps)];
+      batch.pushRect(cx - dot / 2, cy - dot / 2, dot, dot, r / 255, g / 255, bl / 255, params.opacity);
     }
+    renderer.draw(batch.data, batch.vertexCount);
   }
 
   return stepOnce;

@@ -3,8 +3,9 @@
 // row via an 8-bit rule number and drawn once (no accumulation blending needed),
 // so a given seed + rule + params always reproduce the same texture regardless
 // of resolution — cell size scales with canvas width like the other modes.
+// Each row's live cells go out as one WebGL quad-batch draw call (webgl.js).
 
-function runCellular(ctx, w, h, params, seed) {
+function runCellular(renderer, w, h, params, seed) {
   const rand = mulberry32(seed);
   const cellSize = Math.max(2, params.cellSize * (w / BASE_W));
   const cols = Math.max(3, Math.round(w / cellSize));
@@ -24,7 +25,8 @@ function runCellular(ctx, w, h, params, seed) {
   }
 
   const rampSteps = 32;
-  const ramp = buildColorRamp(params.colorStart, params.colorEnd, params.opacity, rampSteps);
+  const ramp = buildRgbRamp(params.colorStart, params.colorEnd, rampSteps);
+  const batch = createQuadBatch(cols);
 
   let gen = 0;
 
@@ -32,10 +34,12 @@ function runCellular(ctx, w, h, params, seed) {
     if (gen >= rows) return;
 
     const y = gen * cellSize;
-    ctx.fillStyle = ramp[rampIndex(gen / Math.max(1, rows - 1), rampSteps)];
+    const { r: cr, g: cg, b: cb } = ramp[rampIndex(gen / Math.max(1, rows - 1), rampSteps)];
+    batch.reset();
     for (let x = 0; x < cols; x++) {
-      if (row[x]) ctx.fillRect(x * cellSize, y, cellSize, cellSize);
+      if (row[x]) batch.pushRect(x * cellSize, y, cellSize, cellSize, cr / 255, cg / 255, cb / 255, params.opacity);
     }
+    renderer.draw(batch.data, batch.vertexCount);
 
     const next = new Uint8Array(cols);
     for (let x = 0; x < cols; x++) {

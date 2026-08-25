@@ -1,6 +1,16 @@
 let currentSeed = Math.floor(Math.random() * 1e9);
 let animHandle = null;
 
+// Created once and reused across every regenerate() — recreating the WebGL
+// context/shader program on each call would leak GPU resources over an
+// interactive session (slider drags, randomize clicks, etc).
+// preserveDrawingBuffer is required here: without it the browser implicitly
+// clears the color buffer between animation frames (once presented), which
+// would wipe out the "accumulate many low-alpha layers over many frames" look
+// every mode relies on.
+const previewGL = document.getElementById('previewCanvas').getContext('webgl', { preserveDrawingBuffer: true });
+const previewRenderer = createQuadRenderer(previewGL);
+
 const els = {
   canvas: document.getElementById('previewCanvas'),
   seedInput: document.getElementById('seedInput'),
@@ -274,28 +284,26 @@ function updateReadouts() {
 
 function startPreview() {
   if (animHandle) cancelAnimationFrame(animHandle);
-  const canvas = els.canvas;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  previewRenderer.resize(els.canvas.width, els.canvas.height);
+  previewRenderer.clear();
 
   const mode = currentMode();
   const params = readParams();
   let stepOnce, totalFrames, subStepsPerFrame;
   if (mode === 'attractor') {
-    stepOnce = runAttractor(ctx, canvas.width, canvas.height, params, currentSeed);
+    stepOnce = runAttractor(previewRenderer, els.canvas.width, els.canvas.height, params, currentSeed);
     totalFrames = 220;
     subStepsPerFrame = Math.max(1, Math.round(params.speed));
   } else if (mode === 'bloom') {
-    stepOnce = runBloom(ctx, canvas.width, canvas.height, params, currentSeed);
+    stepOnce = runBloom(previewRenderer, els.canvas.width, els.canvas.height, params, currentSeed);
     totalFrames = 200;
     subStepsPerFrame = 1;
   } else if (mode === 'cellular') {
-    stepOnce = runCellular(ctx, canvas.width, canvas.height, params, currentSeed);
+    stepOnce = runCellular(previewRenderer, els.canvas.width, els.canvas.height, params, currentSeed);
     totalFrames = 250;
     subStepsPerFrame = 1;
   } else {
-    stepOnce = runFlowField(ctx, canvas.width, canvas.height, params, currentSeed);
+    stepOnce = runFlowField(previewRenderer, els.canvas.width, els.canvas.height, params, currentSeed);
     totalFrames = 260;
     subStepsPerFrame = 2;
   }
@@ -324,25 +332,28 @@ function renderFullResBlob(seed, mode, params, w, h) {
   return new Promise((resolve) => {
     const off = document.createElement('canvas');
     off.width = w; off.height = h;
-    const ctx = off.getContext('2d');
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, w, h);
+    // preserveDrawingBuffer so toBlob() can read back the buffer after the
+    // synchronous draw loop below, before the browser would otherwise clear it.
+    const gl = off.getContext('webgl', { preserveDrawingBuffer: true });
+    const renderer = createQuadRenderer(gl);
+    renderer.resize(w, h);
+    renderer.clear();
 
     const areaScale = (w * h) / (BASE_W * BASE_H);
     let stepOnce, totalSteps;
     if (mode === 'attractor') {
       const overrideCount = Math.min(1600, Math.round(params.density * Math.sqrt(areaScale)));
-      stepOnce = runAttractor(ctx, w, h, params, seed, { overrideCount });
+      stepOnce = runAttractor(renderer, w, h, params, seed, { overrideCount });
       totalSteps = Math.min(6000, 220 * Math.max(1, Math.round(params.speed)));
     } else if (mode === 'bloom') {
-      stepOnce = runBloom(ctx, w, h, params, seed);
+      stepOnce = runBloom(renderer, w, h, params, seed);
       totalSteps = 200;
     } else if (mode === 'cellular') {
-      stepOnce = runCellular(ctx, w, h, params, seed);
+      stepOnce = runCellular(renderer, w, h, params, seed);
       totalSteps = 2000;
     } else {
       const overrideCount = Math.min(7000, Math.round(params.density * Math.sqrt(areaScale)));
-      stepOnce = runFlowField(ctx, w, h, params, seed, { overrideCount });
+      stepOnce = runFlowField(renderer, w, h, params, seed, { overrideCount });
       totalSteps = params.life * 3;
     }
     for (let i = 0; i < totalSteps; i++) stepOnce();

@@ -17,15 +17,14 @@ function lerpRgb(hexStart, hexEnd, t) {
   };
 }
 
-// Precomputes a fixed number of interpolated rgba() strings between two hex
+// Precomputes a fixed number of interpolated {r,g,b} steps between two hex
 // colors so per-particle/per-point coloring only needs a cheap array lookup
-// instead of building a new color string every draw call.
-function buildColorRamp(hexStart, hexEnd, opacity, steps) {
+// instead of re-interpolating every draw call.
+function buildRgbRamp(hexStart, hexEnd, steps) {
   const ramp = new Array(steps);
   for (let i = 0; i < steps; i++) {
     const t = steps === 1 ? 0 : i / (steps - 1);
-    const { r, g, b } = lerpRgb(hexStart, hexEnd, t);
-    ramp[i] = `rgba(${r},${g},${b},${opacity})`;
+    ramp[i] = lerpRgb(hexStart, hexEnd, t);
   }
   return ramp;
 }

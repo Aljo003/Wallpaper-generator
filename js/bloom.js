@@ -3,8 +3,9 @@
 // (never-cleared) canvas, so overlapping blobs build up into a soft nebula-like
 // texture on the true-black background — the same "accumulate over many frames"
 // idea flowfield.js and attractor.js use, just with soft circles instead of lines/dots.
+// The soft edge falloff is computed in the shared WebGL fragment shader (webgl.js).
 
-function runBloom(ctx, w, h, params, seed, opts) {
+function runBloom(renderer, w, h, params, seed, opts) {
   opts = opts || {};
   const noise2D = buildNoise(seed);
   const rand = mulberry32(seed ^ 0x2545f491);
@@ -24,8 +25,10 @@ function runBloom(ctx, w, h, params, seed, opts) {
   }
 
   const drift = params.speed * minDim * 0.0006;
+  const batch = createQuadBatch(blobs.length);
 
   function stepOnce() {
+    batch.reset();
     for (let i = 0; i < blobs.length; i++) {
       const b = blobs[i];
       const n = noise2D((b.x / w) * 2 + b.noiseOffset, (b.y / h) * 2 + b.noiseOffset);
@@ -39,15 +42,9 @@ function runBloom(ctx, w, h, params, seed, opts) {
       if (b.y > h + b.radius) b.y = -b.radius;
 
       const { r, g, b: bl } = b.rgb;
-      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius);
-      grad.addColorStop(0, `rgba(${r},${g},${bl},${params.opacity})`);
-      grad.addColorStop(1, `rgba(${r},${g},${bl},0)`);
-
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-      ctx.fill();
+      batch.pushCircle(b.x, b.y, b.radius, r / 255, g / 255, bl / 255, params.opacity);
     }
+    renderer.draw(batch.data, batch.vertexCount);
   }
 
   return stepOnce;
