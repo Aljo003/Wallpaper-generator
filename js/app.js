@@ -28,6 +28,9 @@ const els = {
   resSelect: document.getElementById('resSelect'),
   newPatternBtn: document.getElementById('newPatternBtn'),
   exportBtn: document.getElementById('exportBtn'),
+  batchCount: document.getElementById('batchCount'),
+  batchCountVal: document.getElementById('batchCountVal'),
+  batchExportBtn: document.getElementById('batchExportBtn'),
   randomizeBtn: document.getElementById('randomizeBtn'),
   exportStatus: document.getElementById('exportStatus'),
   liveDot: document.getElementById('liveDot'),
@@ -238,46 +241,81 @@ function regenerate(newSeed) {
   startPreview();
 }
 
-function exportPNG() {
-  const [w, h] = els.resSelect.value.split('x').map(Number);
-  els.exportStatus.textContent = 'Renderam ' + w + '×' + h + ' ...';
-  els.exportBtn.disabled = true;
-
-  setTimeout(() => {
+function renderFullResBlob(seed, mode, params, w, h) {
+  return new Promise((resolve) => {
     const off = document.createElement('canvas');
     off.width = w; off.height = h;
     const ctx = off.getContext('2d');
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, w, h);
 
-    const mode = currentMode();
-    const params = readParams();
     const areaScale = (w * h) / (BASE_W * BASE_H);
-
     let stepOnce, totalSteps;
     if (mode === 'attractor') {
       const overrideCount = Math.min(1600, Math.round(params.density * Math.sqrt(areaScale)));
-      stepOnce = runAttractor(ctx, w, h, params, currentSeed, { overrideCount });
+      stepOnce = runAttractor(ctx, w, h, params, seed, { overrideCount });
       totalSteps = Math.min(6000, 220 * Math.max(1, Math.round(params.speed)));
     } else {
       const overrideCount = Math.min(7000, Math.round(params.density * Math.sqrt(areaScale)));
-      stepOnce = runFlowField(ctx, w, h, params, currentSeed, { overrideCount });
+      stepOnce = runFlowField(ctx, w, h, params, seed, { overrideCount });
       totalSteps = params.life * 3;
     }
     for (let i = 0; i < totalSteps; i++) stepOnce();
 
-    off.toBlob((blob) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${mode}-${currentSeed}-${w}x${h}.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-      els.exportStatus.textContent = 'Shranjeno ✓';
-      els.exportBtn.disabled = false;
-      setTimeout(() => { els.exportStatus.textContent = ''; }, 2500);
-    }, 'image/png');
-  }, 30);
+    off.toBlob(resolve, 'image/png');
+  });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function exportPNG() {
+  const [w, h] = els.resSelect.value.split('x').map(Number);
+  const mode = currentMode();
+  const params = readParams();
+  els.exportStatus.textContent = 'Renderam ' + w + '×' + h + ' ...';
+  els.exportBtn.disabled = true;
+
+  await wait(30);
+  const blob = await renderFullResBlob(currentSeed, mode, params, w, h);
+  downloadBlob(blob, `${mode}-${currentSeed}-${w}x${h}.png`);
+  els.exportStatus.textContent = 'Shranjeno ✓';
+  els.exportBtn.disabled = false;
+  setTimeout(() => { els.exportStatus.textContent = ''; }, 2500);
+}
+
+async function batchExport() {
+  const [w, h] = els.resSelect.value.split('x').map(Number);
+  const mode = currentMode();
+  const params = readParams();
+  const count = +els.batchCount.value;
+
+  els.batchExportBtn.disabled = true;
+  els.exportBtn.disabled = true;
+
+  for (let i = 0; i < count; i++) {
+    const seed = Math.floor(Math.random() * 1e9);
+    els.exportStatus.textContent = `Batch ${i + 1}/${count} ...`;
+    await wait(30);
+    const blob = await renderFullResBlob(seed, mode, params, w, h);
+    downloadBlob(blob, `${mode}-${seed}-${w}x${h}.png`);
+    await wait(400);
+  }
+
+  els.exportStatus.textContent = `Batch končan (${count}) ✓`;
+  els.batchExportBtn.disabled = false;
+  els.exportBtn.disabled = false;
+  setTimeout(() => { els.exportStatus.textContent = ''; }, 3000);
 }
 
 ['density', 'fieldScale', 'curl', 'speed', 'life', 'lineWidth', 'opacity'].forEach((id) => {
@@ -298,6 +336,10 @@ els.seedInput.addEventListener('change', () => {
 els.randomizeBtn.addEventListener('click', () => regenerate(Math.floor(Math.random() * 1e9)));
 els.newPatternBtn.addEventListener('click', () => regenerate(Math.floor(Math.random() * 1e9)));
 els.exportBtn.addEventListener('click', exportPNG);
+els.batchCount.addEventListener('input', () => {
+  els.batchCountVal.textContent = els.batchCount.value;
+});
+els.batchExportBtn.addEventListener('click', batchExport);
 els.modeSelect.addEventListener('change', () => {
   applyModeVisibility();
   regenerate();

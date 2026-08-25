@@ -263,6 +263,13 @@ button:hover { border-color: var(--accent); }
   padding: 11px;
 }
 
+.batch-field { margin-top: 16px; }
+
+#batchExportBtn {
+  width: 100%;
+  padding: 11px;
+}
+
 .export-status {
   margin-top: 8px;
   font-size: 10.5px;
