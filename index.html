@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<title>Flowfield — OLED Wallpaper Generator</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+  <div class="stage">
+    <canvas id="previewCanvas" width="960" height="540"></canvas>
+    <div class="stage-tag"><span class="dot" id="liveDot"></span><span id="stageLabel">PREVIEW 960×540</span></div>
+  </div>
+
+  <div class="panel">
+    <h1>Flowfield <span>OLED</span></h1>
+    <p class="sub">generativni ozadja &middot; true black</p>
+
+    <div class="field">
+      <label>Seed <span class="val" id="seedVal">—</span></label>
+      <div class="row">
+        <input type="number" id="seedInput" step="1">
+        <button id="randomizeBtn" title="Naključni seed">⟳</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Generativni mode</label>
+      <select id="modeSelect">
+        <option value="flowfield">Flow field</option>
+        <option value="attractor">Attractor</option>
+      </select>
+    </div>
+
+    <div class="mode-group" id="flowfieldFields">
+      <div class="field">
+        <label>Gostota delcev <span class="val" id="densityVal"></span></label>
+        <input type="range" id="density" min="200" max="4000" step="50" value="1200">
+      </div>
+
+      <div class="field">
+        <label>Merilo polja <span class="val" id="scaleVal"></span></label>
+        <input type="range" id="fieldScale" min="1" max="20" step="0.5" value="6">
+      </div>
+
+      <div class="field">
+        <label>Zavitost (curl) <span class="val" id="curlVal"></span></label>
+        <input type="range" id="curl" min="0.5" max="6" step="0.1" value="2">
+      </div>
+
+      <div class="field">
+        <label>Hitrost <span class="val" id="speedVal"></span></label>
+        <input type="range" id="speed" min="0.2" max="3" step="0.1" value="1">
+      </div>
+
+      <div class="field">
+        <label>Dolžina sledi <span class="val" id="lifeVal"></span></label>
+        <input type="range" id="life" min="40" max="400" step="10" value="160">
+      </div>
+
+      <div class="field">
+        <label>Debelina črte <span class="val" id="widthVal"></span></label>
+        <input type="range" id="lineWidth" min="0.4" max="3" step="0.1" value="1">
+      </div>
+
+      <div class="field">
+        <label>Prosojnost sledi <span class="val" id="opacityVal"></span></label>
+        <input type="range" id="opacity" min="0.02" max="0.25" step="0.01" value="0.08">
+      </div>
+    </div>
+
+    <div class="mode-group hidden" id="attractorFields">
+      <div class="field">
+        <label>Vrsta atraktorja</label>
+        <select id="attractorType">
+          <option value="clifford">Clifford</option>
+          <option value="dejong">De Jong</option>
+          <option value="svensson">Svensson</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Gostota sledi <span class="val" id="trailsVal"></span></label>
+        <input type="range" id="attractorTrails" min="20" max="400" step="10" value="120">
+      </div>
+
+      <div class="field">
+        <label>Hitrost <span class="val" id="attractorSpeedVal"></span></label>
+        <input type="range" id="attractorSpeed" min="1" max="20" step="1" value="6">
+      </div>
+
+      <div class="field">
+        <label>Velikost pike <span class="val" id="pointSizeVal"></span></label>
+        <input type="range" id="pointSize" min="0.4" max="3" step="0.1" value="1.1">
+      </div>
+
+      <div class="field">
+        <label>Prosojnost pike <span class="val" id="pointOpacityVal"></span></label>
+        <input type="range" id="pointOpacity" min="0.02" max="0.4" step="0.01" value="0.12">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Barva</label>
+      <input type="color" id="accentColor" value="#5eead4">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>Izhodna resolucija</label>
+      <select id="resSelect">
+        <option value="1920x1080">1920 × 1080 (FHD)</option>
+        <option value="2560x1440" selected>2560 × 1440 (QHD)</option>
+        <option value="3440x1440">3440 × 1440 (Ultrawide)</option>
+        <option value="3840x2160">3840 × 2160 (4K UHD)</option>
+      </select>
+    </div>
+
+    <button id="newPatternBtn">Nov vzorec</button>
+    <button id="exportBtn">Izvozi PNG</button>
+    <div class="export-status" id="exportStatus"></div>
+  </div>
+</div>
+
+<script src="js/noise.js"></script>
+<script src="js/flowfield.js"></script>
+<script src="js/attractor.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
