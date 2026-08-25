@@ -21,6 +21,9 @@ const els = {
   pointSize: document.getElementById('pointSize'),
   pointOpacity: document.getElementById('pointOpacity'),
   accentColor: document.getElementById('accentColor'),
+  favoriteLabel: document.getElementById('favoriteLabel'),
+  saveFavoriteBtn: document.getElementById('saveFavoriteBtn'),
+  favoritesList: document.getElementById('favoritesList'),
   resSelect: document.getElementById('resSelect'),
   newPatternBtn: document.getElementById('newPatternBtn'),
   exportBtn: document.getElementById('exportBtn'),
@@ -66,6 +69,105 @@ function readParams() {
     lineWidth: +els.lineWidth.value,
     opacity: +els.opacity.value,
   };
+}
+
+function writeParams(mode, params) {
+  els.accentColor.value = params.color;
+  if (mode === 'attractor') {
+    els.attractorType.value = params.attractorType;
+    els.attractorTrails.value = params.density;
+    els.attractorSpeed.value = params.speed;
+    els.pointSize.value = params.pointSize;
+    els.pointOpacity.value = params.opacity;
+  } else {
+    els.density.value = params.density;
+    els.fieldScale.value = params.fieldScale;
+    els.curl.value = params.curl;
+    els.speed.value = params.speed;
+    els.life.value = params.life;
+    els.lineWidth.value = params.lineWidth;
+    els.opacity.value = params.opacity;
+  }
+}
+
+const FAVORITES_KEY = 'flowfield-wallpaper:favorites';
+
+function loadFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem(FAVORITES_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavoritesList(list) {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+}
+
+function renderFavorites() {
+  const list = loadFavorites();
+  els.favoritesList.innerHTML = '';
+  if (list.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'favorites-empty';
+    empty.textContent = 'Ni shranjenih vzorcev';
+    els.favoritesList.appendChild(empty);
+    return;
+  }
+  list.forEach((entry) => {
+    const row = document.createElement('div');
+    row.className = 'favorite-item';
+
+    const name = document.createElement('span');
+    name.className = 'favorite-name';
+    name.textContent = entry.label;
+    name.title = `${entry.mode} · seed ${entry.seed}`;
+
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'favorite-load';
+    loadBtn.textContent = '↺';
+    loadBtn.title = 'Naloži';
+    loadBtn.addEventListener('click', () => applyFavorite(entry));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'favorite-delete';
+    delBtn.textContent = '×';
+    delBtn.title = 'Izbriši';
+    delBtn.addEventListener('click', () => removeFavorite(entry.id));
+
+    row.appendChild(name);
+    row.appendChild(loadBtn);
+    row.appendChild(delBtn);
+    els.favoritesList.appendChild(row);
+  });
+}
+
+function addFavorite() {
+  const label = els.favoriteLabel.value.trim() ||
+    `${currentMode() === 'attractor' ? 'Attractor' : 'Flow field'} #${currentSeed}`;
+  const list = loadFavorites();
+  list.unshift({
+    id: Date.now(),
+    label,
+    mode: currentMode(),
+    seed: currentSeed,
+    params: readParams(),
+  });
+  saveFavoritesList(list.slice(0, 30));
+  els.favoriteLabel.value = '';
+  renderFavorites();
+}
+
+function applyFavorite(entry) {
+  els.modeSelect.value = entry.mode;
+  applyModeVisibility();
+  writeParams(entry.mode, entry.params);
+  regenerate(entry.seed);
+}
+
+function removeFavorite(id) {
+  saveFavoritesList(loadFavorites().filter((e) => e.id !== id));
+  renderFavorites();
 }
 
 function applyModeVisibility() {
@@ -193,6 +295,8 @@ els.modeSelect.addEventListener('change', () => {
   applyModeVisibility();
   regenerate();
 });
+els.saveFavoriteBtn.addEventListener('click', addFavorite);
 
 applyModeVisibility();
+renderFavorites();
 regenerate(currentSeed);

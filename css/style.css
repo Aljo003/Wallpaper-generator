@@ -199,6 +199,54 @@ button:hover { border-color: var(--accent); }
   margin: 20px 0;
 }
 
+#saveFavoriteBtn { width: 44px; }
+
+.favorites-list {
+  margin-top: 10px;
+  max-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.favorites-empty {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+}
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-field);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 6px 6px 9px;
+}
+
+.favorite-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favorite-load, .favorite-delete {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+}
+.favorite-delete { color: var(--text-dim); }
+.favorite-delete:hover { border-color: #e05a5a; color: #e05a5a; }
+
 #newPatternBtn {
   width: 100%;
   padding: 11px;

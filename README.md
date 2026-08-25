@@ -43,8 +43,7 @@ npx serve .
 
 - [ ] Dodatni generativni modi: particle bloom/gradient blobs, cellular
       automata
-- [ ] Shranjevanje/nalaganje priljubljenih seedov + parametrov (localStorage
-      ali JSON export/import)
+- [x] Shranjevanje/nalaganje priljubljenih seedov + parametrov (localStorage)
 - [ ] Batch export — več variacij naenkrat v en klik
 - [ ] WebGL renderer za večjo gostoto delcev pri boljši performansi
 - [ ] Dvo-barvni gradient namesto ene accent barve
