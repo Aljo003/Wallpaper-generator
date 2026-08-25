@@ -7,18 +7,24 @@ function hexToRgb(hex) {
   return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
 }
 
+function lerpRgb(hexStart, hexEnd, t) {
+  const start = hexToRgb(hexStart);
+  const end = hexToRgb(hexEnd);
+  return {
+    r: Math.round(start.r + (end.r - start.r) * t),
+    g: Math.round(start.g + (end.g - start.g) * t),
+    b: Math.round(start.b + (end.b - start.b) * t),
+  };
+}
+
 // Precomputes a fixed number of interpolated rgba() strings between two hex
 // colors so per-particle/per-point coloring only needs a cheap array lookup
 // instead of building a new color string every draw call.
 function buildColorRamp(hexStart, hexEnd, opacity, steps) {
-  const start = hexToRgb(hexStart);
-  const end = hexToRgb(hexEnd);
   const ramp = new Array(steps);
   for (let i = 0; i < steps; i++) {
     const t = steps === 1 ? 0 : i / (steps - 1);
-    const r = Math.round(start.r + (end.r - start.r) * t);
-    const g = Math.round(start.g + (end.g - start.g) * t);
-    const b = Math.round(start.b + (end.b - start.b) * t);
+    const { r, g, b } = lerpRgb(hexStart, hexEnd, t);
     ramp[i] = `rgba(${r},${g},${b},${opacity})`;
   }
   return ramp;

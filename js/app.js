@@ -8,6 +8,7 @@ const els = {
   modeSelect: document.getElementById('modeSelect'),
   flowfieldFields: document.getElementById('flowfieldFields'),
   attractorFields: document.getElementById('attractorFields'),
+  bloomFields: document.getElementById('bloomFields'),
   density: document.getElementById('density'),
   fieldScale: document.getElementById('fieldScale'),
   curl: document.getElementById('curl'),
@@ -20,6 +21,10 @@ const els = {
   attractorSpeed: document.getElementById('attractorSpeed'),
   pointSize: document.getElementById('pointSize'),
   pointOpacity: document.getElementById('pointOpacity'),
+  blobCount: document.getElementById('blobCount'),
+  blobSize: document.getElementById('blobSize'),
+  bloomSpeed: document.getElementById('bloomSpeed'),
+  bloomOpacity: document.getElementById('bloomOpacity'),
   colorStart: document.getElementById('colorStart'),
   colorEnd: document.getElementById('colorEnd'),
   favoriteLabel: document.getElementById('favoriteLabel'),
@@ -45,6 +50,10 @@ const els = {
   attractorSpeedVal: document.getElementById('attractorSpeedVal'),
   pointSizeVal: document.getElementById('pointSizeVal'),
   pointOpacityVal: document.getElementById('pointOpacityVal'),
+  blobCountVal: document.getElementById('blobCountVal'),
+  blobSizeVal: document.getElementById('blobSizeVal'),
+  bloomSpeedVal: document.getElementById('bloomSpeedVal'),
+  bloomOpacityVal: document.getElementById('bloomOpacityVal'),
 };
 
 function currentMode() {
@@ -54,7 +63,8 @@ function currentMode() {
 function readParams() {
   const colorStart = els.colorStart.value;
   const colorEnd = els.colorEnd.value;
-  if (currentMode() === 'attractor') {
+  const mode = currentMode();
+  if (mode === 'attractor') {
     return {
       colorStart,
       colorEnd,
@@ -63,6 +73,16 @@ function readParams() {
       speed: +els.attractorSpeed.value,
       pointSize: +els.pointSize.value,
       opacity: +els.pointOpacity.value,
+    };
+  }
+  if (mode === 'bloom') {
+    return {
+      colorStart,
+      colorEnd,
+      blobCount: +els.blobCount.value,
+      blobSize: +els.blobSize.value,
+      speed: +els.bloomSpeed.value,
+      opacity: +els.bloomOpacity.value,
     };
   }
   return {
@@ -88,6 +108,11 @@ function writeParams(mode, params) {
     els.attractorSpeed.value = params.speed;
     els.pointSize.value = params.pointSize;
     els.pointOpacity.value = params.opacity;
+  } else if (mode === 'bloom') {
+    els.blobCount.value = params.blobCount;
+    els.blobSize.value = params.blobSize;
+    els.bloomSpeed.value = params.speed;
+    els.bloomOpacity.value = params.opacity;
   } else {
     els.density.value = params.density;
     els.fieldScale.value = params.fieldScale;
@@ -151,9 +176,11 @@ function renderFavorites() {
   });
 }
 
+const MODE_LABELS = { flowfield: 'Flow field', attractor: 'Attractor', bloom: 'Bloom' };
+
 function addFavorite() {
   const label = els.favoriteLabel.value.trim() ||
-    `${currentMode() === 'attractor' ? 'Attractor' : 'Flow field'} #${currentSeed}`;
+    `${MODE_LABELS[currentMode()]} #${currentSeed}`;
   const list = loadFavorites();
   list.unshift({
     id: Date.now(),
@@ -180,20 +207,27 @@ function removeFavorite(id) {
 }
 
 function applyModeVisibility() {
-  const isAttractor = currentMode() === 'attractor';
-  els.flowfieldFields.classList.toggle('hidden', isAttractor);
-  els.attractorFields.classList.toggle('hidden', !isAttractor);
+  const mode = currentMode();
+  els.flowfieldFields.classList.toggle('hidden', mode !== 'flowfield');
+  els.attractorFields.classList.toggle('hidden', mode !== 'attractor');
+  els.bloomFields.classList.toggle('hidden', mode !== 'bloom');
 }
 
 function updateReadouts() {
   const p = readParams();
+  const mode = currentMode();
   els.seedVal.textContent = currentSeed;
   els.seedInput.value = currentSeed;
-  if (currentMode() === 'attractor') {
+  if (mode === 'attractor') {
     els.trailsVal.textContent = p.density;
     els.attractorSpeedVal.textContent = p.speed;
     els.pointSizeVal.textContent = p.pointSize.toFixed(1);
     els.pointOpacityVal.textContent = p.opacity.toFixed(2);
+  } else if (mode === 'bloom') {
+    els.blobCountVal.textContent = p.blobCount;
+    els.blobSizeVal.textContent = p.blobSize;
+    els.bloomSpeedVal.textContent = p.speed.toFixed(1);
+    els.bloomOpacityVal.textContent = p.opacity.toFixed(3);
   } else {
     els.densityVal.textContent = p.density;
     els.scaleVal.textContent = p.fieldScale.toFixed(1);
@@ -214,13 +248,21 @@ function startPreview() {
 
   const mode = currentMode();
   const params = readParams();
-  const stepOnce = mode === 'attractor'
-    ? runAttractor(ctx, canvas.width, canvas.height, params, currentSeed)
-    : runFlowField(ctx, canvas.width, canvas.height, params, currentSeed);
-
+  let stepOnce, totalFrames, subStepsPerFrame;
+  if (mode === 'attractor') {
+    stepOnce = runAttractor(ctx, canvas.width, canvas.height, params, currentSeed);
+    totalFrames = 220;
+    subStepsPerFrame = Math.max(1, Math.round(params.speed));
+  } else if (mode === 'bloom') {
+    stepOnce = runBloom(ctx, canvas.width, canvas.height, params, currentSeed);
+    totalFrames = 200;
+    subStepsPerFrame = 1;
+  } else {
+    stepOnce = runFlowField(ctx, canvas.width, canvas.height, params, currentSeed);
+    totalFrames = 260;
+    subStepsPerFrame = 2;
+  }
   let frame = 0;
-  const totalFrames = mode === 'attractor' ? 220 : 260;
-  const subStepsPerFrame = mode === 'attractor' ? Math.max(1, Math.round(params.speed)) : 2;
   els.liveDot.classList.add('live');
 
   function loop() {
@@ -255,6 +297,9 @@ function renderFullResBlob(seed, mode, params, w, h) {
       const overrideCount = Math.min(1600, Math.round(params.density * Math.sqrt(areaScale)));
       stepOnce = runAttractor(ctx, w, h, params, seed, { overrideCount });
       totalSteps = Math.min(6000, 220 * Math.max(1, Math.round(params.speed)));
+    } else if (mode === 'bloom') {
+      stepOnce = runBloom(ctx, w, h, params, seed);
+      totalSteps = 200;
     } else {
       const overrideCount = Math.min(7000, Math.round(params.density * Math.sqrt(areaScale)));
       stepOnce = runFlowField(ctx, w, h, params, seed, { overrideCount });
@@ -323,6 +368,10 @@ async function batchExport() {
   els[id].addEventListener('change', () => regenerate());
 });
 ['attractorTrails', 'attractorSpeed', 'pointSize', 'pointOpacity'].forEach((id) => {
+  els[id].addEventListener('input', updateReadouts);
+  els[id].addEventListener('change', () => regenerate());
+});
+['blobCount', 'blobSize', 'bloomSpeed', 'bloomOpacity'].forEach((id) => {
   els[id].addEventListener('input', updateReadouts);
   els[id].addEventListener('change', () => regenerate());
 });
