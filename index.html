@@ -122,10 +122,18 @@
     <div class="field">
       <label>Izhodna resolucija</label>
       <select id="resSelect">
-        <option value="1920x1080">1920 × 1080 (FHD)</option>
-        <option value="2560x1440" selected>2560 × 1440 (QHD)</option>
-        <option value="3440x1440">3440 × 1440 (Ultrawide)</option>
-        <option value="3840x2160">3840 × 2160 (4K UHD)</option>
+        <optgroup label="Ležeče (desktop)">
+          <option value="1920x1080">1920 × 1080 (FHD)</option>
+          <option value="2560x1440" selected>2560 × 1440 (QHD)</option>
+          <option value="3440x1440">3440 × 1440 (Ultrawide)</option>
+          <option value="3840x2160">3840 × 2160 (4K UHD)</option>
+        </optgroup>
+        <optgroup label="Pokončno (telefon)">
+          <option value="1080x1920">1080 × 1920 (FHD)</option>
+          <option value="1170x2532">1170 × 2532 (iPhone)</option>
+          <option value="1440x3120">1440 × 3120 (Android QHD+)</option>
+          <option value="2160x3840">2160 × 3840 (4K UHD)</option>
+        </optgroup>
       </select>
     </div>
 

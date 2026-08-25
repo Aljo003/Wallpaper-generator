@@ -47,4 +47,4 @@ npx serve .
 - [ ] Batch export — več variacij naenkrat v en klik
 - [ ] WebGL renderer za večjo gostoto delcev pri boljši performansi
 - [ ] Dvo-barvni gradient namesto ene accent barve
-- [ ] Portrait/phone resolucije, če se kdaj premisli glede platforme
+- [x] Portrait/phone resolucije
